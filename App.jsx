@@ -26,6 +26,7 @@ function App() {
   const menuItemStyle = {width: '100%', padding: '10px 15px', border: 'none', background: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '10px', transition: '0.2s', color: '#262626'};
   const [editingPost, setEditingPost] = useState(null); // जो पोस्ट एडिट हो रही है उसका डेटा
   const [editCaption, setEditCaption] = useState("");
+  const [locationSearch, setLocationSearch] = useState(""); // साइडबार सर्च के लिए
 
 
 // 1. लॉगिन चेक करने के लिए
@@ -322,7 +323,7 @@ if (!user) return <Auth onLogin={() => window.location.reload()} />;
         </div>
 
         {/* 2. CENTER COLUMN (Feed) */}
-        <div style={{ flex: '1', maxWidth: '600px', minHeight: '80vh' }}>
+        <div style={{ flex: '0 0 600px', width: '600px', minHeight: '100vh' }}>
           
           {/* Create Post Box */}
           <div style={{ backgroundColor: 'white', border: '1px solid #dbdbdb', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
@@ -388,7 +389,8 @@ if (!user) return <Auth onLogin={() => window.location.reload()} />;
                         {activeTab === 'memories' && <span style={{ color: '#8e8e8e', fontWeight: 'normal', fontSize: '12px', marginLeft: '5px' }}>• Memory #{posts.length - index}</span>}
                       </p>
                       {post.locationName && <p style={{ margin: 0, fontSize: '13px', color: '#0095f6', fontWeight: '500' }}>📍 {post.locationName}</p>}
-                      <small style={{ color: '#8e8e8e', fontSize: '11px', marginTop: '2px' }}>{post.createdAt ? format(new Date(post.createdAt), 'PP') : "Just now"}</small>
+                      <small style={{ color: '#8e8e8e', fontSize: '11px', marginTop: '2px' }}>
+                     {post.createdAt ? format(new Date(post.createdAt), 'PP') : "Just now"}</small>
                     </div>
                   </div>
                   <div style={{ position: 'relative' }}>
@@ -426,14 +428,119 @@ if (!user) return <Auth onLogin={() => window.location.reload()} />;
           )}
         </div>
 
-        {/* 3. RIGHT SIDEBAR */}
-        <div style={{ width: '300px', position: 'sticky', top: '20px', height: 'fit-content' }}>
-          <div style={{ backgroundColor: 'white', border: '1px solid #dbdbdb', borderRadius: '12px', padding: '15px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-            <p style={{ fontWeight: 'bold', color: '#262626', marginBottom: '20px', fontSize: '18px', borderBottom: '1px solid #eee', paddingBottom: '10px' }}>📍 Visited Places</p>
-            {/* Sidebar content logic... */}
+{/* --- 3. RIGHT SIDEBAR --- */}
+<div style={{ width: '300px', position: 'sticky', top: '20px', height: 'fit-content' }}>
+  <div style={{ backgroundColor: 'white', border: '1px solid #dbdbdb', borderRadius: '12px', padding: '15px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+    
+    <p style={{ fontWeight: 'bold', color: '#262626', marginBottom: '12px', fontSize: '16px' }}>
+    📍 Visited Places</p>
+
+{/* ✅ नया सर्च बॉक्स */}
+    <div style={{ marginBottom: '15px' }}>
+      <input 
+        type="text" 
+        placeholder="🔍 Search saved locations..." 
+        value={locationSearch}
+        onChange={(e) => setLocationSearch(e.target.value)}
+        style={{
+          width: '100%', padding: '8px 12px', borderRadius: '8px',
+          border: '1px solid #efefef', backgroundColor: '#fafafa', fontSize: '14px', outline: 'none'
+        }}
+      />
+    </div>
+<div style={{ display: 'flex', flexDirection: 'column', gap: '5px', maxHeight: '400px', overflowY: 'auto' }}>
+
+      {/* 2. लोकेशन्स की लिस्ट (सर्च के हिसाब से फिल्टर की हुई) */}
+      {[...new Set(posts.map(p => p.locationName))]
+        .filter(Boolean)
+        .filter(loc => loc.toLowerCase().includes(locationSearch.toLowerCase())) // ✅ सर्च फिल्टर
+        .map((loc, i) => (
+          <button 
+            key={i}
+            onClick={() => setSelectedLocation(loc)}
+            style={{
+              padding: '10px', borderRadius: '8px', border: 'none', textAlign: 'left',
+              backgroundColor: selectedLocation === loc ? '#f0f9ff' : 'transparent',
+              color: selectedLocation === loc ? '#0095f6' : '#262626',
+              cursor: 'pointer', fontSize: '14px',
+              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+              fontWeight: selectedLocation === loc ? 'bold' : 'normal'
+            }}
+          >
+            📍 {loc}
+          </button>
+        ))}
+    {/* 3. अगर सर्च में कुछ न मिले */}
+      {locationSearch && [...new Set(posts.map(p => p.locationName))].filter(loc => loc?.toLowerCase().includes(locationSearch.toLowerCase())).length === 0 && (
+        <p style={{ fontSize: '12px', color: '#8e8e8e', textAlign: 'center', marginTop: '10px' }}>
+          No matching places found.
+        </p>
+      )}
+
+      {/* --- 🏆 TOP TRAVELERS SECTION --- */}
+<div style={{ marginTop: '20px', borderTop: '1px solid #eee', paddingTop: '15px' }}>
+  <p style={{ 
+    fontWeight: 'bold', 
+    color: '#262626', 
+    marginBottom: '15px', 
+    fontSize: '16px', 
+    display: 'flex', 
+    alignItems: 'center', 
+    gap: '8px' 
+  }}>
+    🏆 Top Travelers
+  </p>
+
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+    {topTravelers.length > 0 ? (
+      topTravelers.map((traveler, index) => (
+        <div key={index} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {/* मेडल कलर्स (Gold, Silver, Bronze) */}
+            <div style={{ 
+              width: '32px', 
+              height: '32px', 
+              borderRadius: '50%', 
+              backgroundColor: index === 0 ? '#FFD700' : index === 1 ? '#C0C0C0' : index === 2 ? '#CD7F32' : '#dbdbdb',
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              color: 'white', 
+              fontWeight: 'bold', 
+              fontSize: '14px',
+              boxShadow: index < 3 ? '0 2px 4px rgba(0,0,0,0.1)' : 'none'
+            }}>
+              {traveler.name ? traveler.name[0].toUpperCase() : 'U'}
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontSize: '14px', fontWeight: '600', color: '#262626' }}>
+                {traveler.name}
+              </span>
+              <span style={{ fontSize: '11px', color: '#8e8e8e' }}>
+                {index === 0 ? '👑 Leader' : 'Explorer'}
+              </span>
+            </div>
+          </div>
+
+          <div style={{ textAlign: 'right' }}>
+            <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#0095f6' }}>
+              {traveler.count}
+            </span>
+            <span style={{ fontSize: '11px', color: '#8e8e8e', marginLeft: '4px' }}>posts</span>
           </div>
         </div>
-
+      ))
+    ) : (
+      <p style={{ fontSize: '12px', color: '#8e8e8e', textAlign: 'center', padding: '10px' }}>
+        No rankings available yet.
+      </p>
+    )}
+  </div>
+</div>
+    </div>
+    </div>
+    </div>
       </div> {/* Main Layout End */}
     </div> // Background End
   );
